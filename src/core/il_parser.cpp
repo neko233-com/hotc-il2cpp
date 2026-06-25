@@ -36,12 +36,19 @@ Instruction ILParser::DecodeInstruction(const uint8_t* data, size_t& offset) {
     instr.offset = static_cast<uint32_t>(offset);
 
     uint8_t opcode = ReadUInt8(data, offset);
-    instr.opcode = static_cast<OpCode>(opcode);
+    
+    // Two-byte opcodes starting with 0xFE
+    if (opcode == 0xFE) {
+        uint8_t opcode2 = ReadUInt8(data, offset);
+        instr.opcode = static_cast<OpCode>(0xFE00 | opcode2);
+    } else {
+        instr.opcode = static_cast<OpCode>(opcode);
+    }
 
     switch (instr.opcode) {
-        case OpCode::Ldarg_S:
-        case OpCode::Stloc_S:
-        case OpCode::Ldloc_S:
+        case OpCode::LDarg_S:
+        case OpCode::STloc_S:
+        case OpCode::LDloc_S:
         case OpCode::Ldc_I4_S:
         case OpCode::Br_S:
         case OpCode::Brfalse_S:
@@ -59,9 +66,9 @@ Instruction ILParser::DecodeInstruction(const uint8_t* data, size_t& offset) {
             instr.operand = ReadUInt8(data, offset);
             break;
 
-        case OpCode::Ldarg:
-        case OpCode::Stloc:
-        case OpCode::Ldloc:
+        case OpCode::LDarg:
+        case OpCode::STloc:
+        case OpCode::LDloc:
         case OpCode::Ldc_I4:
         case OpCode::Br:
         case OpCode::Brfalse:
@@ -90,6 +97,10 @@ Instruction ILParser::DecodeInstruction(const uint8_t* data, size_t& offset) {
         case OpCode::Castclass:
         case OpCode::Isinst:
         case OpCode::Throw:
+        case OpCode::Ldftn:
+        case OpCode::Ldvirtftn:
+        case OpCode::Initobj:
+        case OpCode::Constrained:
             instr.operand = ReadUInt32(data, offset);
             break;
 

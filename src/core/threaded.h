@@ -104,7 +104,7 @@ private:
     std::unordered_map<std::string, NativeFunc> native_functions_;
     const MethodBody* current_method_ = nullptr;
 
-    ThreadFunc dispatch_table_[256];
+    ThreadFunc dispatch_table_[512];
 };
 
 } // namespace hotc

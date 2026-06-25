@@ -239,14 +239,16 @@ void ThreadedInterpreter::ExecLdlen() {
 void ThreadedInterpreter::ExecLdelem() {
     uint32_t index = PopUInt32();
     void* arr = PopObject();
-    uint32_t* elements = static_cast<uint32_t*>(static_cast<uint8_t*>(arr) + sizeof(uint32_t));
+    uint8_t* base = static_cast<uint8_t*>(arr) + sizeof(uint32_t);
+    uint32_t* elements = reinterpret_cast<uint32_t*>(base);
     PushInt32(static_cast<int32_t>(elements[index]));
 }
 void ThreadedInterpreter::ExecStelem() {
     int32_t value = PopInt32();
     uint32_t index = PopUInt32();
     void* arr = PopObject();
-    uint32_t* elements = static_cast<uint32_t*>(static_cast<uint8_t*>(arr) + sizeof(uint32_t));
+    uint8_t* base = static_cast<uint8_t*>(arr) + sizeof(uint32_t);
+    uint32_t* elements = reinterpret_cast<uint32_t*>(base);
     elements[index] = static_cast<uint32_t>(value);
 }
 void ThreadedInterpreter::ExecLdfld() {
@@ -269,8 +271,8 @@ void ThreadedInterpreter::ExecStfld() {
 void ThreadedInterpreter::ExecLdsfld() { PushObject(nullptr); }
 void ThreadedInterpreter::ExecStsfld() { PopObject(); }
 void ThreadedInterpreter::ExecNewobj() { PushObject(nullptr); }
-void ThreadedInterpreter::ExecCastclass() { /* keep object as-is */ }
-void ThreadedInterpreter::ExecIsinst() { /* keep object as-is */ }
+void ThreadedInterpreter::ExecCastclass() {}
+void ThreadedInterpreter::ExecIsinst() {}
 void ThreadedInterpreter::ExecThrow() { running_ = false; }
 
 void ThreadedInterpreter::PushObject(void* value) { object_stack_.push_back(value); }
