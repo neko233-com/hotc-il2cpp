@@ -97,8 +97,8 @@ TEST_F(InterpreterTest, LocalVariables) {
     method.max_stack = 1;
     method.max_locals = 1;
     method.instructions.push_back({OpCode::Ldc_I4, 42, 0});
-    method.instructions.push_back({OpCode::Stloc_0, 0, 1});
-    method.instructions.push_back({OpCode::Ldloc_0, 0, 2});
+    method.instructions.push_back({OpCode::STloc_0, 0, 1});
+    method.instructions.push_back({OpCode::LDloc_0, 0, 2});
     method.instructions.push_back({OpCode::Ret, 0, 3});
 
     interpreter_->Execute(method);
