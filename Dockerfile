@@ -16,11 +16,12 @@ WORKDIR /app
 COPY CMakeLists.txt ./
 COPY src/ ./src/
 COPY tests/ ./tests/
+COPY benchmarks/ ./benchmarks/
 
 RUN mkdir -p build && cd build \
-    && cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHOTC_BUILD_TESTS=ON \
+    && cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHOTC_BUILD_TESTS=ON -DHOTC_BUILD_BENCHMARKS=ON \
     && cmake --build . -j$(nproc)
 
 WORKDIR /app/build
 
-CMD ["ctest", "--output-on-failure"]
+CMD ["bash", "-c", "ctest --output-on-failure && ./benchmarks/hotc-benchmarks"]

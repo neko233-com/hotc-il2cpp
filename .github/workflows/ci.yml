@@ -6,6 +6,15 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
   build-test:
     runs-on: ubuntu-latest
@@ -17,19 +26,45 @@ jobs:
           docker compose build
           docker compose run build-test
       
-      - name: Verify
+      - name: Run Benchmarks
         run: |
-          echo "All tests passed!"
+          docker compose run shell ./build/benchmarks/hotc-benchmarks
+      
+      - name: Upload Benchmark Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: |
+            docs/site/benchmarks.html
+            benchmarks/results.json
 
-  test-release:
+  build-docs:
     runs-on: ubuntu-latest
     needs: build-test
     steps:
       - uses: actions/checkout@v4
       
-      - name: Build Release
-        run: |
-          docker build --build-arg BUILD_TYPE=Release -t hotc-test .
-          
-      - name: Run Tests
-        run: docker run hotc-test ctest --output-on-failure
+      - name: Download Benchmark Results
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmark-results
+          path: docs/site
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/site
+
+  deploy-pages:
+    runs-on: ubuntu-latest
+    needs: build-docs
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

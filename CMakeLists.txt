@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(HOTC_BUILD_TESTS "Build tests" ON)
+option(HOTC_BUILD_BENCHMARKS "Build benchmarks" ON)
 option(HOTC_USE_THREADED "Enable token threaded interpreter" ON)
 
 add_subdirectory(src)
@@ -13,4 +14,8 @@ add_subdirectory(src)
 if(HOTC_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
+endif()
+
+if(HOTC_BUILD_BENCHMARKS)
+    add_subdirectory(benchmarks)
 endif()
