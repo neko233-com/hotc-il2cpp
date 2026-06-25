@@ -1,0 +1,12 @@
+services:
+  build-test:
+    build: .
+    command: ctest --output-on-failure
+    
+  shell:
+    build: .
+    command: /bin/bash
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/app

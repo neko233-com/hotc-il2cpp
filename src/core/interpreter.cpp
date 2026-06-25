@@ -1,16 +1,19 @@
 #include "interpreter.h"
 #include <cstring>
 #include <stdexcept>
+#include <cmath>
 
 namespace hotc {
 
 Interpreter::Interpreter(TypeSystem& types, MemoryManager& memory)
     : type_system_(types), memory_(memory) {
-    stack_.reserve(1024);
-    locals_.reserve(256);
-    int_stack_.reserve(1024);
+    object_stack_.reserve(1024);
+    int32_stack_.reserve(1024);
+    uint32_stack_.reserve(1024);
+    int64_stack_.reserve(256);
     float_stack_.reserve(256);
     double_stack_.reserve(256);
+    locals_.reserve(256);
 }
 
 void Interpreter::Execute(const MethodBody& method) {
@@ -22,13 +25,21 @@ void Interpreter::Execute(const MethodBody& method, void** args, uint32_t arg_co
     pc_ = 0;
     running_ = true;
 
-    locals_.resize(method.max_locals);
-    stack_.clear();
-    int_stack_.clear();
+    locals_.resize(method.max_locals, nullptr);
+    object_stack_.clear();
+    int32_stack_.clear();
+    uint32_stack_.clear();
+    int64_stack_.clear();
     float_stack_.clear();
     double_stack_.clear();
 
-    while (running_ && pc_ < method.instructions.size()) {
+    if (args && arg_count > 0) {
+        for (uint32_t i = 0; i < arg_count; i++) {
+            locals_[i] = args[i];
+        }
+    }
+
+    while (running_ && pc_ < static_cast<uint32_t>(method.instructions.size())) {
         const auto& instr = method.instructions[pc_];
         ExecuteInstruction(instr);
         pc_++;
@@ -41,38 +52,38 @@ void Interpreter::ExecuteInstruction(const Instruction& instr) {
             break;
 
         case OpCode::Ldc_I4_0:
-            PushInt(0);
+            PushInt32(0);
             break;
         case OpCode::Ldc_I4_1:
-            PushInt(1);
+            PushInt32(1);
             break;
         case OpCode::Ldc_I4_2:
-            PushInt(2);
+            PushInt32(2);
             break;
         case OpCode::Ldc_I4_3:
-            PushInt(3);
+            PushInt32(3);
             break;
         case OpCode::Ldc_I4_4:
-            PushInt(4);
+            PushInt32(4);
             break;
         case OpCode::Ldc_I4_5:
-            PushInt(5);
+            PushInt32(5);
             break;
         case OpCode::Ldc_I4_6:
-            PushInt(6);
+            PushInt32(6);
             break;
         case OpCode::Ldc_I4_7:
-            PushInt(7);
+            PushInt32(7);
             break;
         case OpCode::Ldc_I4_8:
-            PushInt(8);
+            PushInt32(8);
             break;
         case OpCode::Ldc_I4_M1:
-            PushInt(static_cast<uint32_t>(-1));
+            PushInt32(-1);
             break;
         case OpCode::Ldc_I4:
         case OpCode::Ldc_I4_S:
-            PushInt(instr.operand);
+            PushInt32(static_cast<int32_t>(instr.operand));
             break;
 
         case OpCode::Ldc_R4: {
@@ -82,38 +93,50 @@ void Interpreter::ExecuteInstruction(const Instruction& instr) {
             break;
         }
 
+        case OpCode::Ldc_R8: {
+            // Read 8 bytes for double
+            uint32_t low = instr.operand;
+            uint32_t high = (pc_ + 1 < static_cast<uint32_t>(current_method_->instructions.size())) 
+                ? current_method_->instructions[pc_ + 1].operand : 0;
+            uint64_t raw = (static_cast<uint64_t>(high) << 32) | low;
+            double value;
+            std::memcpy(&value, &raw, sizeof(double));
+            PushDouble(value);
+            break;
+        }
+
         case OpCode::Ldloc_0:
-            Push(locals_[0]);
+            if (locals_.size() > 0) PushObject(locals_[0]);
             break;
         case OpCode::Ldloc_1:
-            Push(locals_[1]);
+            if (locals_.size() > 1) PushObject(locals_[1]);
             break;
         case OpCode::Ldloc_2:
-            Push(locals_[2]);
+            if (locals_.size() > 2) PushObject(locals_[2]);
             break;
         case OpCode::Ldloc_3:
-            Push(locals_[3]);
+            if (locals_.size() > 3) PushObject(locals_[3]);
             break;
         case OpCode::Ldloc_S:
         case OpCode::Ldloc:
-            Push(locals_[instr.operand]);
+            if (instr.operand < locals_.size()) PushObject(locals_[instr.operand]);
             break;
 
         case OpCode::Stloc_0:
-            locals_[0] = Pop();
+            if (locals_.size() > 0) locals_[0] = PopObject();
             break;
         case OpCode::Stloc_1:
-            locals_[1] = Pop();
+            if (locals_.size() > 1) locals_[1] = PopObject();
             break;
         case OpCode::Stloc_2:
-            locals_[2] = Pop();
+            if (locals_.size() > 2) locals_[2] = PopObject();
             break;
         case OpCode::Stloc_3:
-            locals_[3] = Pop();
+            if (locals_.size() > 3) locals_[3] = PopObject();
             break;
         case OpCode::Stloc_S:
         case OpCode::Stloc:
-            locals_[instr.operand] = Pop();
+            if (instr.operand < locals_.size()) locals_[instr.operand] = PopObject();
             break;
 
         case OpCode::Ldarg_0:
@@ -122,131 +145,152 @@ void Interpreter::ExecuteInstruction(const Instruction& instr) {
         case OpCode::Ldarg_3:
         case OpCode::Ldarg_S:
         case OpCode::Ldarg:
-            // Args handled via stack in real implementation
+            // Args handled via locals in this implementation
             break;
 
         case OpCode::Dup: {
-            void* value = Pop();
-            Push(value);
-            Push(value);
+            void* value = PopObject();
+            PushObject(value);
+            PushObject(value);
             break;
         }
 
         case OpCode::Pop:
-            Pop();
+            PopObject();
             break;
 
         case OpCode::Add: {
-            uint32_t b = PopInt();
-            uint32_t a = PopInt();
-            PushInt(a + b);
+            int32_t b = PopInt32();
+            int32_t a = PopInt32();
+            PushInt32(a + b);
             break;
         }
 
         case OpCode::Sub: {
-            uint32_t b = PopInt();
-            uint32_t a = PopInt();
-            PushInt(a - b);
+            int32_t b = PopInt32();
+            int32_t a = PopInt32();
+            PushInt32(a - b);
             break;
         }
 
         case OpCode::Mul: {
-            uint32_t b = PopInt();
-            uint32_t a = PopInt();
-            PushInt(a * b);
+            int32_t b = PopInt32();
+            int32_t a = PopInt32();
+            PushInt32(a * b);
             break;
         }
 
         case OpCode::Div: {
-            uint32_t b = PopInt();
-            uint32_t a = PopInt();
-            PushInt(a / b);
+            int32_t b = PopInt32();
+            int32_t a = PopInt32();
+            PushInt32(a / b);
+            break;
+        }
+
+        case OpCode::Div_Un: {
+            uint32_t b = PopUInt32();
+            uint32_t a = PopUInt32();
+            PushUInt32(a / b);
             break;
         }
 
         case OpCode::Rem: {
-            uint32_t b = PopInt();
-            uint32_t a = PopInt();
-            PushInt(a % b);
+            int32_t b = PopInt32();
+            int32_t a = PopInt32();
+            PushInt32(a % b);
+            break;
+        }
+
+        case OpCode::Rem_Un: {
+            uint32_t b = PopUInt32();
+            uint32_t a = PopUInt32();
+            PushUInt32(a % b);
             break;
         }
 
         case OpCode::And: {
-            uint32_t b = PopInt();
-            uint32_t a = PopInt();
-            PushInt(a & b);
+            int32_t b = PopInt32();
+            int32_t a = PopInt32();
+            PushInt32(a & b);
             break;
         }
 
         case OpCode::Or: {
-            uint32_t b = PopInt();
-            uint32_t a = PopInt();
-            PushInt(a | b);
+            int32_t b = PopInt32();
+            int32_t a = PopInt32();
+            PushInt32(a | b);
             break;
         }
 
         case OpCode::Xor: {
-            uint32_t b = PopInt();
-            uint32_t a = PopInt();
-            PushInt(a ^ b);
+            int32_t b = PopInt32();
+            int32_t a = PopInt32();
+            PushInt32(a ^ b);
             break;
         }
 
         case OpCode::Shl: {
-            uint32_t b = PopInt();
-            uint32_t a = PopInt();
-            PushInt(a << b);
+            int32_t b = PopInt32();
+            int32_t a = PopInt32();
+            PushInt32(a << b);
             break;
         }
 
         case OpCode::Shr: {
-            uint32_t b = PopInt();
-            int32_t a = static_cast<int32_t>(PopInt());
-            PushInt(static_cast<uint32_t>(a >> b));
+            int32_t b = PopInt32();
+            int32_t a = PopInt32();
+            PushInt32(a >> b);
+            break;
+        }
+
+        case OpCode::Shr_Un: {
+            uint32_t b = PopUInt32();
+            uint32_t a = PopUInt32();
+            PushUInt32(a >> b);
             break;
         }
 
         case OpCode::Neg: {
-            int32_t value = static_cast<int32_t>(PopInt());
-            PushInt(static_cast<uint32_t>(-value));
+            int32_t value = PopInt32();
+            PushInt32(-value);
             break;
         }
 
         case OpCode::Not: {
-            uint32_t value = PopInt();
-            PushInt(~value);
+            int32_t value = PopInt32();
+            PushInt32(~value);
             break;
         }
 
         case OpCode::Ceq: {
-            uint32_t b = PopInt();
-            uint32_t a = PopInt();
-            PushInt(a == b ? 1 : 0);
+            int32_t b = PopInt32();
+            int32_t a = PopInt32();
+            PushInt32(a == b ? 1 : 0);
             break;
         }
 
         case OpCode::Cgt: {
-            uint32_t b = PopInt();
-            uint32_t a = PopInt();
-            PushInt(a > b ? 1 : 0);
+            int32_t b = PopInt32();
+            int32_t a = PopInt32();
+            PushInt32(a > b ? 1 : 0);
             break;
         }
 
         case OpCode::Clt: {
-            uint32_t b = PopInt();
-            uint32_t a = PopInt();
-            PushInt(a < b ? 1 : 0);
+            int32_t b = PopInt32();
+            int32_t a = PopInt32();
+            PushInt32(a < b ? 1 : 0);
             break;
         }
 
         case OpCode::Br:
         case OpCode::Br_S:
-            pc_ = instr.operand - 1; // -1 because pc_++ will execute
+            pc_ = instr.operand - 1;
             break;
 
         case OpCode::Brfalse:
         case OpCode::Brfalse_S: {
-            uint32_t value = PopInt();
+            int32_t value = PopInt32();
             if (value == 0) {
                 pc_ = instr.operand - 1;
             }
@@ -255,16 +299,116 @@ void Interpreter::ExecuteInstruction(const Instruction& instr) {
 
         case OpCode::Brtrue:
         case OpCode::Brtrue_S: {
-            uint32_t value = PopInt();
+            int32_t value = PopInt32();
             if (value != 0) {
                 pc_ = instr.operand - 1;
             }
             break;
         }
 
+        case OpCode::Beq:
+        case OpCode::Beq_S: {
+            int32_t b = PopInt32();
+            int32_t a = PopInt32();
+            if (a == b) {
+                pc_ = instr.operand - 1;
+            }
+            break;
+        }
+
+        case OpCode::Bge:
+        case OpCode::Bge_S: {
+            int32_t b = PopInt32();
+            int32_t a = PopInt32();
+            if (a >= b) {
+                pc_ = instr.operand - 1;
+            }
+            break;
+        }
+
+        case OpCode::Bgt:
+        case OpCode::Bgt_S: {
+            int32_t b = PopInt32();
+            int32_t a = PopInt32();
+            if (a > b) {
+                pc_ = instr.operand - 1;
+            }
+            break;
+        }
+
+        case OpCode::Ble:
+        case OpCode::Ble_S: {
+            int32_t b = PopInt32();
+            int32_t a = PopInt32();
+            if (a <= b) {
+                pc_ = instr.operand - 1;
+            }
+            break;
+        }
+
+        case OpCode::Blt:
+        case OpCode::Blt_S: {
+            int32_t b = PopInt32();
+            int32_t a = PopInt32();
+            if (a < b) {
+                pc_ = instr.operand - 1;
+            }
+            break;
+        }
+
+        case OpCode::Bne_Un:
+        case OpCode::Bne_Un_S: {
+            uint32_t b = PopUInt32();
+            uint32_t a = PopUInt32();
+            if (a != b) {
+                pc_ = instr.operand - 1;
+            }
+            break;
+        }
+
+        case OpCode::Bge_Un:
+        case OpCode::Bge_Un_S: {
+            uint32_t b = PopUInt32();
+            uint32_t a = PopUInt32();
+            if (a >= b) {
+                pc_ = instr.operand - 1;
+            }
+            break;
+        }
+
+        case OpCode::Bgt_Un:
+        case OpCode::Bgt_Un_S: {
+            uint32_t b = PopUInt32();
+            uint32_t a = PopUInt32();
+            if (a > b) {
+                pc_ = instr.operand - 1;
+            }
+            break;
+        }
+
+        case OpCode::Ble_Un:
+        case OpCode::Ble_Un_S: {
+            uint32_t b = PopUInt32();
+            uint32_t a = PopUInt32();
+            if (a <= b) {
+                pc_ = instr.operand - 1;
+            }
+            break;
+        }
+
+        case OpCode::Blt_Un:
+        case OpCode::Blt_Un_S: {
+            uint32_t b = PopUInt32();
+            uint32_t a = PopUInt32();
+            if (a < b) {
+                pc_ = instr.operand - 1;
+            }
+            break;
+        }
+
         case OpCode::Call: {
-            // Find and call the method
-            // In real implementation, this would look up the method table
+            // Look up and call the method
+            // For now, just a stub
             break;
         }
 
@@ -273,12 +417,97 @@ void Interpreter::ExecuteInstruction(const Instruction& instr) {
             break;
 
         case OpCode::Ldnull:
-            Push(nullptr);
+            PushObject(nullptr);
             break;
 
+        case OpCode::Box: {
+            void* value = PopObject();
+            PushObject(value);
+            break;
+        }
+
+        case OpCode::Newarr: {
+            uint32_t count = PopUInt32();
+            void* arr = memory_.AllocateArray(4, count);
+            PushObject(arr);
+            break;
+        }
+
+        case OpCode::Ldlen: {
+            void* arr = PopObject();
+            // Read length from array header
+            uint32_t len = *static_cast<uint32_t*>(arr);
+            PushUInt32(len);
+            break;
+        }
+
+        case OpCode::Ldelem_I4:
+        case OpCode::Ldelem_Any: {
+            uint32_t index = PopUInt32();
+            void* arr = PopObject();
+            uint32_t* elements = static_cast<uint32_t*>(static_cast<uint8_t*>(arr) + sizeof(uint32_t));
+            PushInt32(static_cast<int32_t>(elements[index]));
+            break;
+        }
+
+        case OpCode::Stelem_I4:
+        case OpCode::Stelem_Any: {
+            int32_t value = PopInt32();
+            uint32_t index = PopUInt32();
+            void* arr = PopObject();
+            uint32_t* elements = static_cast<uint32_t*>(static_cast<uint8_t*>(arr) + sizeof(uint32_t));
+            elements[index] = static_cast<uint32_t>(value);
+            break;
+        }
+
+        case OpCode::Ldfld: {
+            void* obj = PopObject();
+            if (obj) {
+                uint32_t offset = instr.operand;
+                void* field = static_cast<uint8_t*>(obj) + offset;
+                PushObject(field);
+            }
+            break;
+        }
+
+        case OpCode::Stfld: {
+            void* value = PopObject();
+            void* obj = PopObject();
+            if (obj) {
+                uint32_t offset = instr.operand;
+                void* field = static_cast<uint8_t*>(obj) + offset;
+                std::memcpy(field, &value, sizeof(void*));
+            }
+            break;
+        }
+
+        case OpCode::Ldsfld: {
+            // Static field access - would need static field storage
+            PushObject(nullptr);
+            break;
+        }
+
+        case OpCode::Stsfld: {
+            void* value = PopObject();
+            // Static field storage
+            break;
+        }
+
+        case OpCode::Newobj: {
+            // Would need constructor invocation
+            PushObject(nullptr);
+            break;
+        }
+
+        case OpCode::Castclass:
+        case OpCode::Isinst: {
+            void* obj = PopObject();
+            PushObject(obj);
+            break;
+        }
+
         case OpCode::Throw: {
-            void* exception = Pop();
-            // Handle exception
+            void* exception = PopObject();
             running_ = false;
             break;
         }
@@ -288,29 +517,55 @@ void Interpreter::ExecuteInstruction(const Instruction& instr) {
     }
 }
 
-void Interpreter::Push(void* value) {
-    stack_.push_back(value);
+void Interpreter::PushObject(void* value) {
+    object_stack_.push_back(value);
 }
 
-void* Interpreter::Pop() {
-    if (stack_.empty()) {
-        throw std::runtime_error("Stack underflow");
+void* Interpreter::PopObject() {
+    if (object_stack_.empty()) {
+        return nullptr;
     }
-    void* value = stack_.back();
-    stack_.pop_back();
+    void* value = object_stack_.back();
+    object_stack_.pop_back();
     return value;
 }
 
-void Interpreter::PushInt(uint32_t value) {
-    int_stack_.push_back(value);
+void Interpreter::PushInt32(int32_t value) {
+    int32_stack_.push_back(value);
 }
 
-uint32_t Interpreter::PopInt() {
-    if (int_stack_.empty()) {
-        throw std::runtime_error("Int stack underflow");
+int32_t Interpreter::PopInt32() {
+    if (int32_stack_.empty()) {
+        return 0;
     }
-    uint32_t value = int_stack_.back();
-    int_stack_.pop_back();
+    int32_t value = int32_stack_.back();
+    int32_stack_.pop_back();
+    return value;
+}
+
+void Interpreter::PushUInt32(uint32_t value) {
+    uint32_stack_.push_back(value);
+}
+
+uint32_t Interpreter::PopUInt32() {
+    if (uint32_stack_.empty()) {
+        return 0;
+    }
+    uint32_t value = uint32_stack_.back();
+    uint32_stack_.pop_back();
+    return value;
+}
+
+void Interpreter::PushInt64(int64_t value) {
+    int64_stack_.push_back(value);
+}
+
+int64_t Interpreter::PopInt64() {
+    if (int64_stack_.empty()) {
+        return 0;
+    }
+    int64_t value = int64_stack_.back();
+    int64_stack_.pop_back();
     return value;
 }
 
@@ -320,10 +575,23 @@ void Interpreter::PushFloat(float value) {
 
 float Interpreter::PopFloat() {
     if (float_stack_.empty()) {
-        throw std::runtime_error("Float stack underflow");
+        return 0.0f;
     }
     float value = float_stack_.back();
     float_stack_.pop_back();
+    return value;
+}
+
+void Interpreter::PushDouble(double value) {
+    double_stack_.push_back(value);
+}
+
+double Interpreter::PopDouble() {
+    if (double_stack_.empty()) {
+        return 0.0;
+    }
+    double value = double_stack_.back();
+    double_stack_.pop_back();
     return value;
 }
 

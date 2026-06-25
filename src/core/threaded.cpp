@@ -7,11 +7,13 @@ namespace hotc {
 ThreadedInterpreter::ThreadedInterpreter(TypeSystem& types, MemoryManager& memory)
     : type_system_(types), memory_(memory) {
     InitDispatchTable();
-    stack_.reserve(1024);
-    locals_.reserve(256);
-    int_stack_.reserve(1024);
+    object_stack_.reserve(1024);
+    int32_stack_.reserve(1024);
+    uint32_stack_.reserve(1024);
+    int64_stack_.reserve(256);
     float_stack_.reserve(256);
     double_stack_.reserve(256);
+    locals_.reserve(256);
 }
 
 void ThreadedInterpreter::InitDispatchTable() {
@@ -71,13 +73,21 @@ void ThreadedInterpreter::Execute(const MethodBody& method, void** args, uint32_
     pc_ = 0;
     running_ = true;
 
-    locals_.resize(method.max_locals);
-    stack_.clear();
-    int_stack_.clear();
+    locals_.resize(method.max_locals, nullptr);
+    object_stack_.clear();
+    int32_stack_.clear();
+    uint32_stack_.clear();
+    int64_stack_.clear();
     float_stack_.clear();
     double_stack_.clear();
 
-    while (running_ && pc_ < method.instructions.size()) {
+    if (args && arg_count > 0) {
+        for (uint32_t i = 0; i < arg_count; i++) {
+            locals_[i] = args[i];
+        }
+    }
+
+    while (running_ && pc_ < static_cast<uint32_t>(method.instructions.size())) {
         const auto& instr = method.instructions[pc_];
         Dispatch(instr.opcode);
         pc_++;
@@ -85,105 +95,114 @@ void ThreadedInterpreter::Execute(const MethodBody& method, void** args, uint32_
 }
 
 void ThreadedInterpreter::ExecNop() {}
-void ThreadedInterpreter::ExecLdc_I4() { PushInt(current_method_->instructions[pc_].operand); }
+void ThreadedInterpreter::ExecLdc_I4() { PushInt32(static_cast<int32_t>(current_method_->instructions[pc_].operand)); }
 void ThreadedInterpreter::ExecLdc_R4() {
     float value;
     std::memcpy(&value, &current_method_->instructions[pc_].operand, sizeof(float));
     PushFloat(value);
 }
-void ThreadedInterpreter::ExecDup() {
-    void* value = Pop();
-    Push(value);
-    Push(value);
+void ThreadedInterpreter::ExecLdc_R8() {
+    uint32_t low = current_method_->instructions[pc_].operand;
+    uint32_t high = (pc_ + 1 < static_cast<uint32_t>(current_method_->instructions.size())) 
+        ? current_method_->instructions[pc_ + 1].operand : 0;
+    uint64_t raw = (static_cast<uint64_t>(high) << 32) | low;
+    double value;
+    std::memcpy(&value, &raw, sizeof(double));
+    PushDouble(value);
 }
-void ThreadedInterpreter::ExecPop() { Pop(); }
+void ThreadedInterpreter::ExecDup() {
+    void* value = PopObject();
+    PushObject(value);
+    PushObject(value);
+}
+void ThreadedInterpreter::ExecPop() { PopObject(); }
 
 void ThreadedInterpreter::ExecAdd() {
-    uint32_t b = PopInt();
-    uint32_t a = PopInt();
-    PushInt(a + b);
+    int32_t b = PopInt32();
+    int32_t a = PopInt32();
+    PushInt32(a + b);
 }
 
 void ThreadedInterpreter::ExecSub() {
-    uint32_t b = PopInt();
-    uint32_t a = PopInt();
-    PushInt(a - b);
+    int32_t b = PopInt32();
+    int32_t a = PopInt32();
+    PushInt32(a - b);
 }
 
 void ThreadedInterpreter::ExecMul() {
-    uint32_t b = PopInt();
-    uint32_t a = PopInt();
-    PushInt(a * b);
+    int32_t b = PopInt32();
+    int32_t a = PopInt32();
+    PushInt32(a * b);
 }
 
 void ThreadedInterpreter::ExecDiv() {
-    uint32_t b = PopInt();
-    uint32_t a = PopInt();
-    PushInt(a / b);
+    int32_t b = PopInt32();
+    int32_t a = PopInt32();
+    PushInt32(a / b);
 }
 
 void ThreadedInterpreter::ExecRem() {
-    uint32_t b = PopInt();
-    uint32_t a = PopInt();
-    PushInt(a % b);
+    int32_t b = PopInt32();
+    int32_t a = PopInt32();
+    PushInt32(a % b);
 }
 
 void ThreadedInterpreter::ExecAnd() {
-    uint32_t b = PopInt();
-    uint32_t a = PopInt();
-    PushInt(a & b);
+    int32_t b = PopInt32();
+    int32_t a = PopInt32();
+    PushInt32(a & b);
 }
 
 void ThreadedInterpreter::ExecOr() {
-    uint32_t b = PopInt();
-    uint32_t a = PopInt();
-    PushInt(a | b);
+    int32_t b = PopInt32();
+    int32_t a = PopInt32();
+    PushInt32(a | b);
 }
 
 void ThreadedInterpreter::ExecXor() {
-    uint32_t b = PopInt();
-    uint32_t a = PopInt();
-    PushInt(a ^ b);
+    int32_t b = PopInt32();
+    int32_t a = PopInt32();
+    PushInt32(a ^ b);
 }
 
 void ThreadedInterpreter::ExecShl() {
-    uint32_t b = PopInt();
-    uint32_t a = PopInt();
-    PushInt(a << b);
+    int32_t b = PopInt32();
+    int32_t a = PopInt32();
+    PushInt32(a << b);
 }
 
 void ThreadedInterpreter::ExecShr() {
-    uint32_t b = PopInt();
-    int32_t a = static_cast<int32_t>(PopInt());
-    PushInt(static_cast<uint32_t>(a >> b));
+    int32_t b = PopInt32();
+    int32_t a = PopInt32();
+    PushInt32(a >> b);
 }
 
 void ThreadedInterpreter::ExecNeg() {
-    int32_t value = static_cast<int32_t>(PopInt());
-    PushInt(static_cast<uint32_t>(-value));
+    int32_t value = PopInt32();
+    PushInt32(-value);
 }
 
 void ThreadedInterpreter::ExecNot() {
-    uint32_t value = PopInt();
-    PushInt(~value);
+    int32_t value = PopInt32();
+    PushInt32(~value);
 }
 
 void ThreadedInterpreter::ExecCeq() {
-    uint32_t b = PopInt();
-    uint32_t a = PopInt();
-    PushInt(a == b ? 1 : 0);
+    int32_t b = PopInt32();
+    int32_t a = PopInt32();
+    PushInt32(a == b ? 1 : 0);
 }
 
 void ThreadedInterpreter::ExecCgt() {
-    uint32_t b = PopInt();
-    uint32_t a = PopInt();
-    PushInt(a > b ? 1 : 0);
+    int32_t b = PopInt32();
+    int32_t a = PopInt32();
+    PushInt32(a > b ? 1 : 0);
 }
 
 void ThreadedInterpreter::ExecClt() {
-    uint32_t b = PopInt();
-    uint32_t a = PopInt();
-    PushInt(a < b ? 1 : 0);
+    int32_t b = PopInt32();
+    int32_t a = PopInt32();
+    PushInt32(a < b ? 1 : 0);
 }
 
 void ThreadedInterpreter::ExecBr() {
@@ -191,14 +210,14 @@ void ThreadedInterpreter::ExecBr() {
 }
 
 void ThreadedInterpreter::ExecBrfalse() {
-    uint32_t value = PopInt();
+    int32_t value = PopInt32();
     if (value == 0) {
         pc_ = current_method_->instructions[pc_].operand - 1;
     }
 }
 
 void ThreadedInterpreter::ExecBrtrue() {
-    uint32_t value = PopInt();
+    int32_t value = PopInt32();
     if (value != 0) {
         pc_ = current_method_->instructions[pc_].operand - 1;
     }
@@ -207,42 +226,90 @@ void ThreadedInterpreter::ExecBrtrue() {
 void ThreadedInterpreter::ExecCall() {}
 void ThreadedInterpreter::ExecRet() { running_ = false; }
 void ThreadedInterpreter::ExecBox() {}
-void ThreadedInterpreter::ExecNewarr() {}
-void ThreadedInterpreter::ExecLdlen() {}
-void ThreadedInterpreter::ExecLdfld() {}
-void ThreadedInterpreter::ExecStfld() {}
-void ThreadedInterpreter::ExecLdsfld() {}
-void ThreadedInterpreter::ExecStsfld() {}
-void ThreadedInterpreter::ExecNewobj() {}
-void ThreadedInterpreter::ExecCastclass() {}
-void ThreadedInterpreter::ExecIsinst() {}
+void ThreadedInterpreter::ExecNewarr() {
+    uint32_t count = PopUInt32();
+    void* arr = memory_.AllocateArray(4, count);
+    PushObject(arr);
+}
+void ThreadedInterpreter::ExecLdlen() {
+    void* arr = PopObject();
+    uint32_t len = *static_cast<uint32_t*>(arr);
+    PushUInt32(len);
+}
+void ThreadedInterpreter::ExecLdelem() {
+    uint32_t index = PopUInt32();
+    void* arr = PopObject();
+    uint32_t* elements = static_cast<uint32_t*>(static_cast<uint8_t*>(arr) + sizeof(uint32_t));
+    PushInt32(static_cast<int32_t>(elements[index]));
+}
+void ThreadedInterpreter::ExecStelem() {
+    int32_t value = PopInt32();
+    uint32_t index = PopUInt32();
+    void* arr = PopObject();
+    uint32_t* elements = static_cast<uint32_t*>(static_cast<uint8_t*>(arr) + sizeof(uint32_t));
+    elements[index] = static_cast<uint32_t>(value);
+}
+void ThreadedInterpreter::ExecLdfld() {
+    void* obj = PopObject();
+    if (obj) {
+        uint32_t offset = current_method_->instructions[pc_].operand;
+        void* field = static_cast<uint8_t*>(obj) + offset;
+        PushObject(field);
+    }
+}
+void ThreadedInterpreter::ExecStfld() {
+    void* value = PopObject();
+    void* obj = PopObject();
+    if (obj) {
+        uint32_t offset = current_method_->instructions[pc_].operand;
+        void* field = static_cast<uint8_t*>(obj) + offset;
+        std::memcpy(field, &value, sizeof(void*));
+    }
+}
+void ThreadedInterpreter::ExecLdsfld() { PushObject(nullptr); }
+void ThreadedInterpreter::ExecStsfld() { PopObject(); }
+void ThreadedInterpreter::ExecNewobj() { PushObject(nullptr); }
+void ThreadedInterpreter::ExecCastclass() { /* keep object as-is */ }
+void ThreadedInterpreter::ExecIsinst() { /* keep object as-is */ }
 void ThreadedInterpreter::ExecThrow() { running_ = false; }
 
-void ThreadedInterpreter::ExecLdarg() {}
-void ThreadedInterpreter::ExecStarg() {}
-void ThreadedInterpreter::ExecLdloc() {}
-void ThreadedInterpreter::ExecStloc() {}
-void ThreadedInterpreter::ExecLdelem() {}
-void ThreadedInterpreter::ExecStelem() {}
-
-void ThreadedInterpreter::Push(void* value) { stack_.push_back(value); }
-void* ThreadedInterpreter::Pop() {
-    void* value = stack_.back();
-    stack_.pop_back();
+void ThreadedInterpreter::PushObject(void* value) { object_stack_.push_back(value); }
+void* ThreadedInterpreter::PopObject() {
+    if (object_stack_.empty()) return nullptr;
+    void* value = object_stack_.back();
+    object_stack_.pop_back();
     return value;
 }
 
-void ThreadedInterpreter::PushInt(uint32_t value) { int_stack_.push_back(value); }
-uint32_t ThreadedInterpreter::PopInt() {
-    uint32_t value = int_stack_.back();
-    int_stack_.pop_back();
+void ThreadedInterpreter::PushInt32(int32_t value) { int32_stack_.push_back(value); }
+int32_t ThreadedInterpreter::PopInt32() {
+    if (int32_stack_.empty()) return 0;
+    int32_t value = int32_stack_.back();
+    int32_stack_.pop_back();
+    return value;
+}
+
+void ThreadedInterpreter::PushUInt32(uint32_t value) { uint32_stack_.push_back(value); }
+uint32_t ThreadedInterpreter::PopUInt32() {
+    if (uint32_stack_.empty()) return 0;
+    uint32_t value = uint32_stack_.back();
+    uint32_stack_.pop_back();
     return value;
 }
 
 void ThreadedInterpreter::PushFloat(float value) { float_stack_.push_back(value); }
 float ThreadedInterpreter::PopFloat() {
+    if (float_stack_.empty()) return 0.0f;
     float value = float_stack_.back();
     float_stack_.pop_back();
+    return value;
+}
+
+void ThreadedInterpreter::PushDouble(double value) { double_stack_.push_back(value); }
+double ThreadedInterpreter::PopDouble() {
+    if (double_stack_.empty()) return 0.0;
+    double value = double_stack_.back();
+    double_stack_.pop_back();
     return value;
 }
 

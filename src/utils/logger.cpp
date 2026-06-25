@@ -16,6 +16,7 @@ void Logger::SetOutputFILE(const std::string& path) {
 }
 
 void Logger::Debug(const char* fmt, ...) {
+    if (current_level_ > LogLevel::Debug) return;
     va_list args;
     va_start(args, fmt);
     Log(LogLevel::Debug, fmt, args);
@@ -23,6 +24,7 @@ void Logger::Debug(const char* fmt, ...) {
 }
 
 void Logger::Info(const char* fmt, ...) {
+    if (current_level_ > LogLevel::Info) return;
     va_list args;
     va_start(args, fmt);
     Log(LogLevel::Info, fmt, args);
@@ -30,6 +32,7 @@ void Logger::Info(const char* fmt, ...) {
 }
 
 void Logger::Warning(const char* fmt, ...) {
+    if (current_level_ > LogLevel::Warning) return;
     va_list args;
     va_start(args, fmt);
     Log(LogLevel::Warning, fmt, args);
@@ -37,6 +40,7 @@ void Logger::Warning(const char* fmt, ...) {
 }
 
 void Logger::Error(const char* fmt, ...) {
+    if (current_level_ > LogLevel::Error) return;
     va_list args;
     va_start(args, fmt);
     Log(LogLevel::Error, fmt, args);
@@ -51,8 +55,6 @@ void Logger::Fatal(const char* fmt, ...) {
 }
 
 void Logger::Log(LogLevel level, const char* fmt, ...) {
-    if (level < current_level_) return;
-
     const char* level_str;
     switch (level) {
         case LogLevel::Debug: level_str = "DEBUG"; break;

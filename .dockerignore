@@ -1,0 +1,9 @@
+.git
+build/
+docs/
+*.md
+*.bat
+*.sh
+LICENSE
+.github/
+docker-compose.yml
