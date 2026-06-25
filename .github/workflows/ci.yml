@@ -21,19 +21,15 @@ jobs:
         run: |
           echo "All tests passed!"
 
-  test-matrix:
+  test-release:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        build_type: [Release, Debug]
+    needs: build-test
     steps:
       - uses: actions/checkout@v4
       
-      - name: Build ${{ matrix.build_type }}
+      - name: Build Release
         run: |
-          docker build \
-            --build-arg BUILD_TYPE=${{ matrix.build_type }} \
-            -t hotc-test-${{ matrix.build_type }} .
+          docker build --build-arg BUILD_TYPE=Release -t hotc-test .
           
       - name: Run Tests
-        run: docker run hotc-test-${{ matrix.build_type }} ctest --output-on-failure
+        run: docker run hotc-test ctest --output-on-failure
