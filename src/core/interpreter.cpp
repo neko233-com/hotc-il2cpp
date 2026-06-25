@@ -146,9 +146,15 @@ void Interpreter::ExecuteInstruction(const Instruction& instr) {
             break;
 
         case OpCode::Dup: {
-            void* value = PopObject();
-            PushObject(value);
-            PushObject(value);
+            if (!int32_stack_.empty()) {
+                int32_t value = PopInt32();
+                PushInt32(value);
+                PushInt32(value);
+            } else {
+                void* value = PopObject();
+                PushObject(value);
+                PushObject(value);
+            }
             break;
         }
 
