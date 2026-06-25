@@ -224,7 +224,12 @@ void ThreadedInterpreter::ExecBrtrue() {
 }
 
 void ThreadedInterpreter::ExecCall() {}
-void ThreadedInterpreter::ExecRet() { running_ = false; }
+void ThreadedInterpreter::ExecRet() {
+    if (!int32_stack_.empty()) {
+        return_int_ = PopInt32();
+    }
+    running_ = false;
+}
 void ThreadedInterpreter::ExecBox() {}
 void ThreadedInterpreter::ExecNewarr() {
     uint32_t count = PopUInt32();

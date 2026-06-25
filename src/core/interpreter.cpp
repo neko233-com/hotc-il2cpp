@@ -408,12 +408,16 @@ void Interpreter::ExecuteInstruction(const Instruction& instr) {
         }
 
         case OpCode::Ret:
+            if (!int32_stack_.empty()) {
+                return_int_ = PopInt32();
+            }
             running_ = false;
             break;
 
-        case OpCode::LDnull:
+        case OpCode::LDnull: {
             PushObject(nullptr);
             break;
+        }
 
         case OpCode::Box: {
             PopObject();

@@ -13,6 +13,7 @@ void* MemoryManager::Allocate(size_t size) {
     for (auto& block : blocks_) {
         if (!block.in_use && block.size >= size) {
             block.in_use = true;
+            block.alloc_size = size;
             used_memory_ += size;
             return block.data;
         }
@@ -21,6 +22,7 @@ void* MemoryManager::Allocate(size_t size) {
     ExpandHeap(size);
     Block& new_block = blocks_.back();
     new_block.in_use = true;
+    new_block.alloc_size = size;
     used_memory_ += size;
     return new_block.data;
 }
@@ -40,7 +42,8 @@ void MemoryManager::Free(void* ptr) {
     for (auto& block : blocks_) {
         if (block.data == ptr) {
             block.in_use = false;
-            used_memory_ -= block.size;
+            used_memory_ -= block.alloc_size;
+            block.alloc_size = 0;
             break;
         }
     }

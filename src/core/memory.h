@@ -27,6 +27,7 @@ private:
         uint8_t* data;
         size_t size;
         bool in_use;
+        size_t alloc_size = 0;
     };
 
     std::vector<Block> blocks_;
