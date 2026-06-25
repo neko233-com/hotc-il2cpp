@@ -1,0 +1,172 @@
+#pragma once
+
+#include <cstdint>
+#include <string>
+#include <vector>
+#include <variant>
+
+namespace hotc {
+
+enum class OpCode : uint8_t {
+    Nop = 0x00,
+    Break = 0x01,
+    LDarg_0 = 0x02,
+    LDarg_1 = 0x03,
+    LDarg_2 = 0x04,
+    LDarg_3 = 0x05,
+    LDarg_S = 0x0E,
+    LDarg = 0x0F,
+    LDloc_0 = 0x06,
+    LDloc_1 = 0x07,
+    LDloc_2 = 0x08,
+    LDloc_3 = 0x09,
+    LDloc_S = 0x11,
+    LDloc = 0x12,
+    STloc_0 = 0x0A,
+    STloc_1 = 0x0B,
+    STloc_2 = 0x0C,
+    STloc_3 = 0x0D,
+    STloc_S = 0x13,
+    STloc = 0x14,
+    LDnull = 0x14,
+    Ldc_I4_M1 = 0x15,
+    Ldc_I4_0 = 0x16,
+    Ldc_I4_1 = 0x17,
+    Ldc_I4_2 = 0x18,
+    Ldc_I4_3 = 0x19,
+    Ldc_I4_4 = 0x1A,
+    Ldc_I4_5 = 0x1B,
+    Ldc_I4_6 = 0x1C,
+    Ldc_I4_7 = 0x1D,
+    Ldc_I4_8 = 0x1E,
+    Ldc_I4_S = 0x1F,
+    Ldc_I4 = 0x20,
+    Ldc_R4 = 0x22,
+    Ldc_R8 = 0x23,
+    Dup = 0x25,
+    Pop = 0x26,
+    Jmp = 0x27,
+    Call = 0x28,
+    Calli = 0x29,
+    Ret = 0x2A,
+    Br_S = 0x2B,
+    Brfalse_S = 0x2C,
+    Brtrue_S = 0x2D,
+    Beq_S = 0x2E,
+    Bge_S = 0x2F,
+    Bgt_S = 0x30,
+    Ble_S = 0x31,
+    Blt_S = 0x32,
+    Bne_Un_S = 0x33,
+    Bge_Un_S = 0x34,
+    Bgt_Un_S = 0x35,
+    Ble_Un_S = 0x36,
+    Blt_Un_S = 0x37,
+    Br = 0x38,
+    Brfalse = 0x39,
+    Brtrue = 0x3A,
+    Beq = 0x3B,
+    Bge = 0x3C,
+    Bgt = 0x3D,
+    Ble = 0x3E,
+    Blt = 0x3F,
+    Bne_Un = 0x40,
+    Bge_Un = 0x41,
+    Bgt_Un = 0x42,
+    Ble_Un = 0x43,
+    Blt_Un = 0x44,
+    Add = 0x58,
+    Sub = 0x59,
+    Mul = 0x5A,
+    Div = 0x5B,
+    Div_Un = 0x5C,
+    Rem = 0x5D,
+    Rem_Un = 0x5E,
+    And = 0x5F,
+    Or = 0x60,
+    Xor = 0x61,
+    Shl = 0x62,
+    Shr = 0x63,
+    Shr_Un = 0x64,
+    Neg = 0x65,
+    Not = 0x66,
+    Ceq = 0xFE,
+    Cgt = 0xFE,
+    Clt = 0xFE,
+    Box = 0x8C,
+    Newarr = 0x8D,
+    Ldlen = 0x8E,
+    Ldelem_Any = 0x8F,
+    Stelem_Any = 0x90,
+    Ldelem_I4 = 0x94,
+    Stelem_I4 = 0x9E,
+    Ldelem_R4 = 0x98,
+    Stelem_R4 = 0xA2,
+    Ldelem_Ref = 0x9A,
+    Stelem_Ref = 0xA4,
+    Ldobj = 0x71,
+    Stobj = 0x81,
+    Ldfld = 0x7B,
+    Stfld = 0x7D,
+    Ldsfld = 0x7E,
+    Stsfld = 0x80,
+    Ldstr = 0x72,
+    Newobj = 0x73,
+    Castclass = 0x75,
+    Isinst = 0x75,
+    Throw = 0x7A,
+    Rethrow = 0xFE,
+    Sizeof = 0xFE,
+    Typedef = 0xFE,
+    Arglist = 0xFE,
+    Ceq_i4 = 0xFE01,
+    Cgt_i4 = 0xFE02,
+    Cgt_Un = 0xFE03,
+    Clt_i4 = 0xFE04,
+    Clt_Un = 0xFE05,
+    Ldftn = 0xFE06,
+    Ldvirtftn = 0xFE07,
+    Ldarg_Var = 0xFE09,
+    Ldloc_Var = 0xFE0C,
+    Stloc_Var = 0xFE0E,
+    Localloc = 0xFE0F,
+    Endfilter = 0xFE11,
+    Unaligned = 0xFE12,
+    Volatile = 0xFE13,
+    Tail = 0xFE14,
+    Initobj = 0xFE15,
+    Constrained = 0xFE16,
+    Cpblk = 0xFE17,
+    Initblk = 0xFE18,
+    Rethrow_i = 0xFE1A,
+    Sizeof_i = 0xFE1C,
+    Refanytype = 0xFE1D,
+    Readonly = 0xFE1E,
+};
+
+struct Instruction {
+    OpCode opcode;
+    uint32_t operand;
+    uint32_t offset;
+};
+
+struct MethodBody {
+    uint32_t max_stack;
+    uint32_t max_locals;
+    std::vector<Instruction> instructions;
+    std::vector<uint8_t> il_bytes;
+};
+
+class ILParser {
+public:
+    MethodBody Parse(const uint8_t* data, size_t size);
+    MethodBody ParseFile(const std::string& path);
+
+private:
+    Instruction DecodeInstruction(const uint8_t* data, size_t& offset);
+    uint32_t ReadUInt32(const uint8_t* data, size_t& offset);
+    uint16_t ReadUInt16(const uint8_t* data, size_t& offset);
+    uint8_t ReadUInt8(const uint8_t* data, size_t& offset);
+};
+
+} // namespace hotc
