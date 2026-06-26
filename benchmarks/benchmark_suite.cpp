@@ -599,4 +599,8 @@ void IL2CPPBenchmarkSuite::ExportHTML(const std::string& path) {
     suite_.ExportHTML(path);
 }
 
+void IL2CPPBenchmarkSuite::ExportMarkdown(const std::string& path) {
+    suite_.ExportMarkdown(path);
+}
+
 } // namespace hotc

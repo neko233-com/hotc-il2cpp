@@ -39,9 +39,6 @@ public:
     const std::vector<BenchmarkResult>& GetResults() const { return results_; }
     void Clear() { results_.clear(); }
 
-private:
-    Benchmark() = default;
-    
     void AddResult(const std::string& name, std::vector<double>& timings, size_t iterations);
     
     std::vector<BenchmarkResult> results_;
@@ -130,6 +127,7 @@ public:
     void PrintResults();
     void ExportJSON(const std::string& path);
     void ExportHTML(const std::string& path);
+    void ExportMarkdown(const std::string& path);
     
 private:
     Benchmark suite_;
