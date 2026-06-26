@@ -141,7 +141,7 @@ private:
         std::vector<Il2CppMethodDefinition> methods;
     };
     
-    std::vector<AssemblyImage> images_;
+    std::vector<AssemblyImage> assembly_images_;
     
     bool loaded_ = false;
 };

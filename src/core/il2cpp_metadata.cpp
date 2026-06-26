@@ -32,7 +32,7 @@ bool IL2CPPMetadataLoader::LoadAssemblyImage(const uint8_t* data, size_t size, c
     AssemblyImage img;
     img.name = name;
     img.data.assign(data, data + size);
-    images_.push_back(std::move(img));
+    assembly_images_.push_back(std::move(img));
     return true;
 }
 
