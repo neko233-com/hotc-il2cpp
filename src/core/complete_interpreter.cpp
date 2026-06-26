@@ -360,22 +360,117 @@ void CompleteInterpreter::ExecuteLoop() {
 
             // ===== Integer Comparisons =====
             case OpCode::Ceq: {
-                int32_t b = PopI32();
-                int32_t a = PopI32();
-                PushI32(a == b ? 1 : 0);
-                break;
+                int32_t b = PopI32(); int32_t a = PopI32();
+                PushI32(a == b ? 1 : 0); break;
             }
             case OpCode::Cgt: {
-                int32_t b = PopI32();
-                int32_t a = PopI32();
-                PushI32(a > b ? 1 : 0);
-                break;
+                int32_t b = PopI32(); int32_t a = PopI32();
+                PushI32(a > b ? 1 : 0); break;
             }
             case OpCode::Clt: {
-                int32_t b = PopI32();
-                int32_t a = PopI32();
-                PushI32(a < b ? 1 : 0);
+                int32_t b = PopI32(); int32_t a = PopI32();
+                PushI32(a < b ? 1 : 0); break;
+            }
+
+            // ===== Float Arithmetic =====
+            case OpCode::Add_R4: {
+                float b = PopF32(); float a = PopF32();
+                PushF32(a + b); break;
+            }
+            case OpCode::Sub_R4: {
+                float b = PopF32(); float a = PopF32();
+                PushF32(a - b); break;
+            }
+            case OpCode::Mul_R4: {
+                float b = PopF32(); float a = PopF32();
+                PushF32(a * b); break;
+            }
+            case OpCode::Div_R4: {
+                float b = PopF32(); float a = PopF32();
+                PushF32(a / b); break;
+            }
+            case OpCode::Rem_R4: {
+                float b = PopF32(); float a = PopF32();
+                PushF32(std::fmod(a, b)); break;
+            }
+
+            // ===== Double Arithmetic =====
+            case OpCode::Add_R8: {
+                double b = PopF64(); double a = PopF64();
+                PushF64(a + b); break;
+            }
+            case OpCode::Sub_R8: {
+                double b = PopF64(); double a = PopF64();
+                PushF64(a - b); break;
+            }
+            case OpCode::Mul_R8: {
+                double b = PopF64(); double a = PopF64();
+                PushF64(a * b); break;
+            }
+            case OpCode::Div_R8: {
+                double b = PopF64(); double a = PopF64();
+                PushF64(a / b); break;
+            }
+            case OpCode::Rem_R8: {
+                double b = PopF64(); double a = PopF64();
+                PushF64(std::fmod(a, b)); break;
+            }
+
+            // ===== Float Comparisons =====
+            case OpCode::Ceq_R4: {
+                float b = PopF32(); float a = PopF32();
+                PushI32(a == b ? 1 : 0); break;
+            }
+            case OpCode::Cgt_R4: {
+                float b = PopF32(); float a = PopF32();
+                PushI32(a > b ? 1 : 0); break;
+            }
+            case OpCode::Clt_R4: {
+                float b = PopF32(); float a = PopF32();
+                PushI32(a < b ? 1 : 0); break;
+            }
+
+            // ===== Conversion =====
+            case OpCode::Conv_I4: {
+                // Already int32, no-op
                 break;
+            }
+            case OpCode::Conv_R4: {
+                int32_t v = PopI32();
+                PushF32(static_cast<float>(v));
+                break;
+            }
+            case OpCode::Conv_R8: {
+                int32_t v = PopI32();
+                PushF64(static_cast<double>(v));
+                break;
+            }
+            case OpCode::Conv_U4: {
+                int32_t v = PopI32();
+                PushU32(static_cast<uint32_t>(v));
+                break;
+            }
+            case OpCode::Conv_I8: {
+                int32_t v = PopI32();
+                int64_t v64 = v;
+                PushU32(static_cast<uint32_t>(v64));
+                PushU32(static_cast<uint32_t>(v64 >> 32));
+                break;
+            }
+            case OpCode::Conv_R_Un: {
+                uint32_t v = PopU32();
+                PushF32(static_cast<float>(v));
+                break;
+            }
+
+            // ===== Negate Float =====
+            case OpCode::Neg_R4: {
+                float v = PopF32();
+                PushF32(-v); break;
+            }
+            case OpCode::Neg_R8: {
+                double v = PopF64();
+                PushF64(-v); break;
             }
 
             // ===== Branch Instructions =====
@@ -395,6 +490,28 @@ void CompleteInterpreter::ExecuteLoop() {
                 int32_t v = PopI32();
                 if (v != 0) pc_ = instr.operand;
                 break;
+            }
+
+            // ===== Float Branches =====
+            case OpCode::Beq_R4: {
+                float b = PopF32(); float a = PopF32();
+                if (a == b) pc_ = instr.operand; break;
+            }
+            case OpCode::Bge_R4: {
+                float b = PopF32(); float a = PopF32();
+                if (a >= b) pc_ = instr.operand; break;
+            }
+            case OpCode::Bgt_R4: {
+                float b = PopF32(); float a = PopF32();
+                if (a > b) pc_ = instr.operand; break;
+            }
+            case OpCode::Ble_R4: {
+                float b = PopF32(); float a = PopF32();
+                if (a <= b) pc_ = instr.operand; break;
+            }
+            case OpCode::Blt_R4: {
+                float b = PopF32(); float a = PopF32();
+                if (a < b) pc_ = instr.operand; break;
             }
 
             // ===== Conditional Branches =====

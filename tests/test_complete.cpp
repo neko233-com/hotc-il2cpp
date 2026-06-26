@@ -309,3 +309,127 @@ TEST_F(CompleteInterpreterTest, RegisterCompiler) {
     EXPECT_EQ(code[2].opcode, RegOpCode::Add_I4);
     EXPECT_EQ(code[3].opcode, RegOpCode::Ret);
 }
+
+// ========== Float Arithmetic ==========
+
+TEST_F(CompleteInterpreterTest, FloatAdd) {
+    MethodBody m{}; m.max_stack=2; m.max_locals=0;
+    float a = 1.5f; float b = 2.5f;
+    uint32_t a_bits, b_bits;
+    std::memcpy(&a_bits, &a, sizeof(float));
+    std::memcpy(&b_bits, &b, sizeof(float));
+    m.instructions.push_back({OpCode::Ldc_R4, a_bits, 0});
+    m.instructions.push_back({OpCode::Ldc_R4, b_bits, 1});
+    m.instructions.push_back({OpCode::Add_R4, 0, 2});
+    m.instructions.push_back({OpCode::Ret, 0, 3});
+    interp_->Execute(m);
+    EXPECT_FLOAT_EQ(interp_->GetReturnFloat(), 4.0f);
+}
+
+TEST_F(CompleteInterpreterTest, FloatSub) {
+    MethodBody m{}; m.max_stack=2; m.max_locals=0;
+    float a = 10.0f; float b = 3.0f;
+    uint32_t a_bits, b_bits;
+    std::memcpy(&a_bits, &a, sizeof(float));
+    std::memcpy(&b_bits, &b, sizeof(float));
+    m.instructions.push_back({OpCode::Ldc_R4, a_bits, 0});
+    m.instructions.push_back({OpCode::Ldc_R4, b_bits, 1});
+    m.instructions.push_back({OpCode::Sub_R4, 0, 2});
+    m.instructions.push_back({OpCode::Ret, 0, 3});
+    interp_->Execute(m);
+    EXPECT_FLOAT_EQ(interp_->GetReturnFloat(), 7.0f);
+}
+
+TEST_F(CompleteInterpreterTest, FloatMul) {
+    MethodBody m{}; m.max_stack=2; m.max_locals=0;
+    float a = 2.0f; float b = 3.0f;
+    uint32_t a_bits, b_bits;
+    std::memcpy(&a_bits, &a, sizeof(float));
+    std::memcpy(&b_bits, &b, sizeof(float));
+    m.instructions.push_back({OpCode::Ldc_R4, a_bits, 0});
+    m.instructions.push_back({OpCode::Ldc_R4, b_bits, 1});
+    m.instructions.push_back({OpCode::Mul_R4, 0, 2});
+    m.instructions.push_back({OpCode::Ret, 0, 3});
+    interp_->Execute(m);
+    EXPECT_FLOAT_EQ(interp_->GetReturnFloat(), 6.0f);
+}
+
+TEST_F(CompleteInterpreterTest, FloatDiv) {
+    MethodBody m{}; m.max_stack=2; m.max_locals=0;
+    float a = 10.0f; float b = 4.0f;
+    uint32_t a_bits, b_bits;
+    std::memcpy(&a_bits, &a, sizeof(float));
+    std::memcpy(&b_bits, &b, sizeof(float));
+    m.instructions.push_back({OpCode::Ldc_R4, a_bits, 0});
+    m.instructions.push_back({OpCode::Ldc_R4, b_bits, 1});
+    m.instructions.push_back({OpCode::Div_R4, 0, 2});
+    m.instructions.push_back({OpCode::Ret, 0, 3});
+    interp_->Execute(m);
+    EXPECT_FLOAT_EQ(interp_->GetReturnFloat(), 2.5f);
+}
+
+TEST_F(CompleteInterpreterTest, FloatNeg) {
+    MethodBody m{}; m.max_stack=1; m.max_locals=0;
+    float a = 3.14f;
+    uint32_t a_bits;
+    std::memcpy(&a_bits, &a, sizeof(float));
+    m.instructions.push_back({OpCode::Ldc_R4, a_bits, 0});
+    m.instructions.push_back({OpCode::Neg_R4, 0, 1});
+    m.instructions.push_back({OpCode::Ret, 0, 2});
+    interp_->Execute(m);
+    EXPECT_FLOAT_EQ(interp_->GetReturnFloat(), -3.14f);
+}
+
+// ========== Conversion ==========
+
+TEST_F(CompleteInterpreterTest, Conv_R4) {
+    MethodBody m{}; m.max_stack=1; m.max_locals=0;
+    m.instructions.push_back({OpCode::Ldc_I4, 42, 0});
+    m.instructions.push_back({OpCode::Conv_R4, 0, 1});
+    m.instructions.push_back({OpCode::Ret, 0, 2});
+    interp_->Execute(m);
+    EXPECT_FLOAT_EQ(interp_->GetReturnFloat(), 42.0f);
+}
+
+TEST_F(CompleteInterpreterTest, Conv_R8) {
+    MethodBody m{}; m.max_stack=2; m.max_locals=0;
+    m.instructions.push_back({OpCode::Ldc_I4, 42, 0});
+    m.instructions.push_back({OpCode::Conv_R8, 0, 1});
+    m.instructions.push_back({OpCode::Ret, 0, 2});
+    interp_->Execute(m);
+    EXPECT_DOUBLE_EQ(interp_->GetReturnDouble(), 42.0);
+}
+
+// ========== Complex Float Program ==========
+
+TEST_F(CompleteInterpreterTest, FloatCircleArea) {
+    // Area = PI * r * r
+    MethodBody m{}; m.max_stack=3; m.max_locals=0;
+    float pi = 3.14159f; float r = 5.0f;
+    uint32_t pi_bits, r_bits;
+    std::memcpy(&pi_bits, &pi, sizeof(float));
+    std::memcpy(&r_bits, &r, sizeof(float));
+    m.instructions.push_back({OpCode::Ldc_R4, pi_bits, 0});  // push PI
+    m.instructions.push_back({OpCode::Ldc_R4, r_bits, 1});   // push r
+    m.instructions.push_back({OpCode::Ldc_R4, r_bits, 2});   // push r
+    m.instructions.push_back({OpCode::Mul_R4, 0, 3});         // r * r
+    m.instructions.push_back({OpCode::Mul_R4, 0, 4});         // PI * r*r
+    m.instructions.push_back({OpCode::Ret, 0, 5});
+    interp_->Execute(m);
+    EXPECT_NEAR(interp_->GetReturnFloat(), 78.5398f, 0.01f);
+}
+
+// ========== Multi-Local Float ==========
+
+TEST_F(CompleteInterpreterTest, FloatLocalVars) {
+    MethodBody m{}; m.max_stack=1; m.max_locals=2;
+    float a = 1.5f;
+    uint32_t a_bits;
+    std::memcpy(&a_bits, &a, sizeof(float));
+    m.instructions.push_back({OpCode::Ldc_R4, a_bits, 0});
+    m.instructions.push_back({OpCode::STloc_0, 0, 1});
+    m.instructions.push_back({OpCode::LDloc_0, 0, 2});
+    m.instructions.push_back({OpCode::Ret, 0, 3});
+    interp_->Execute(m);
+    EXPECT_FLOAT_EQ(interp_->GetReturnFloat(), 1.5f);
+}
