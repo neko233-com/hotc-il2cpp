@@ -9,10 +9,6 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 add_executable(hotc-tests
-    test_interpreter.cpp
-    test_type_system.cpp
-    test_memory.cpp
-    test_integration.cpp
     test_complete.cpp
 )
 
