@@ -13,6 +13,7 @@ add_executable(hotc-tests
     test_type_system.cpp
     test_memory.cpp
     test_integration.cpp
+    test_complete.cpp
 )
 
 target_link_libraries(hotc-tests

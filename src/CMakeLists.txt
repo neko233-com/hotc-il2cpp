@@ -1,13 +1,13 @@
 set(HOTC_SOURCES
     core/interpreter.cpp
     core/threaded.cpp
+    core/complete_interpreter.cpp
     core/il_parser.cpp
     core/type_system.cpp
     core/memory.cpp
+    core/il2cpp_metadata.cpp
+    core/exception_handling.cpp
     bridge/unity_bridge.cpp
-    bridge/core_module/gameobject.cpp
-    bridge/core_module/transform.cpp
-    bridge/core_module/component.cpp
     utils/il_reader.cpp
     utils/logger.cpp
 )
