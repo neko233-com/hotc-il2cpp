@@ -11,9 +11,7 @@
 #include <functional>
 #include <cstring>
 #include <array>
-#include <thread>
 #include <atomic>
-#include <mutex>
 
 namespace hotc {
 

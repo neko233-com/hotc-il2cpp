@@ -1,7 +1,12 @@
 #include "jit_compiler.h"
 #include <cstring>
+
+#if defined(_WIN32)
+#include <windows.h>
+#elif defined(__APPLE__) || defined(__linux__)
 #include <sys/mman.h>
 #include <unistd.h>
+#endif
 
 namespace hotc {
 
@@ -240,12 +245,17 @@ CompiledCode* JITCompiler::Compile(const MethodBody& method, uint32_t method_ind
     compiled->is_valid = true;
     
     // Make code executable
+#if defined(_WIN32)
+    DWORD old_protect;
+    VirtualProtect(compiled->code, compiled->size, PAGE_EXECUTE_READWRITE, &old_protect);
+#elif defined(__APPLE__) || defined(__linux__)
     long page_size = sysconf(_SC_PAGESIZE);
     uintptr_t addr = reinterpret_cast<uintptr_t>(compiled->code);
     uintptr_t page_start = addr & ~(page_size - 1);
     mprotect(reinterpret_cast<void*>(page_start), 
              compiled->size + (addr - page_start),
              PROT_READ | PROT_WRITE | PROT_EXEC);
+#endif
     
     CompiledCode* result = compiled.get();
     compiled_methods_[method_index] = std::move(compiled);
