@@ -1,5 +1,6 @@
 #include "unity_bridge.h"
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <cmath>
 #include <chrono>
