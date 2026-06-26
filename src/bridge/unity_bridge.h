@@ -1,8 +1,8 @@
 #pragma once
 
-#include "platform.h"
-#include "hp_interpreter.h"
-#include "il2cpp_metadata.h"
+#include "../platform.h"
+#include "../core/hp_interpreter.h"
+#include "../core/il2cpp_metadata.h"
 #include <cstdint>
 #include <vector>
 #include <unordered_map>
