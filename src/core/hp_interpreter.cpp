@@ -35,11 +35,7 @@ HighPerformanceInterpreter::HighPerformanceInterpreter(
     context_.num_locals = config_.locals_size;
     
     // Auto-detect worker threads
-    if (config_.worker_threads == 0) {
-        worker_count_ = std::max(1u, std::thread::hardware_concurrency());
-    } else {
-        worker_count_ = config_.worker_threads;
-    }
+    // (reserved for parallel execution)
 }
 
 HighPerformanceInterpreter::~HighPerformanceInterpreter() {
