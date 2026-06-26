@@ -12,6 +12,7 @@ add_executable(hotc-tests
     test_interpreter.cpp
     test_type_system.cpp
     test_memory.cpp
+    test_integration.cpp
 )
 
 target_link_libraries(hotc-tests
@@ -19,6 +20,8 @@ target_link_libraries(hotc-tests
         hotc-il2cpp
         gtest_main
 )
+
+target_include_directories(hotc-tests PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
 include(GoogleTest)
 gtest_discover_tests(hotc-tests)
