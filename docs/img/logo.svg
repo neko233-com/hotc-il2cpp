@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0e27;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1a1f4e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0d1234;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#7b2ff7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ff6b35;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7b2ff7;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="600" fill="url(#bgGrad)"/>
+  
+  <!-- Grid pattern -->
+  <g opacity="0.1" stroke="#00d4ff" stroke-width="0.5">
+    <line x1="0" y1="100" x2="800" y2="100"/>
+    <line x1="0" y1="200" x2="800" y2="200"/>
+    <line x1="0" y1="300" x2="800" y2="300"/>
+    <line x1="0" y1="400" x2="800" y2="400"/>
+    <line x1="0" y1="500" x2="800" y2="500"/>
+    <line x1="100" y1="0" x2="100" y2="600"/>
+    <line x1="200" y1="0" x2="200" y2="600"/>
+    <line x1="300" y1="0" x2="300" y2="600"/>
+    <line x1="400" y1="0" x2="400" y2="600"/>
+    <line x1="500" y1="0" x2="500" y2="600"/>
+    <line x1="600" y1="0" x2="600" y2="600"/>
+    <line x1="700" y1="0" x2="700" y2="600"/>
+  </g>
+  
+  <!-- Circuit board traces -->
+  <g stroke="url(#logoGrad)" stroke-width="2" fill="none" opacity="0.3">
+    <path d="M100,300 L200,300 L250,250 L350,250"/>
+    <path d="M450,350 L550,350 L600,300 L700,300"/>
+    <path d="M150,200 L250,200 L300,250"/>
+    <path d="M500,200 L600,200 L650,250"/>
+  </g>
+  
+  <!-- Data flow particles -->
+  <g fill="#00d4ff" opacity="0.6">
+    <circle cx="180" cy="300" r="3"/>
+    <circle cx="220" cy="295" r="2"/>
+    <circle cx="260" cy="250" r="3"/>
+    <circle cx="340" cy="255" r="2"/>
+    <circle cx="480" cy="350" r="3"/>
+    <circle cx="540" cy="345" r="2"/>
+    <circle cx="590" cy="300" r="3"/>
+    <circle cx="680" cy="295" r="2"/>
+  </g>
+  
+  <!-- Main logo shape - H -->
+  <g transform="translate(400, 240)" filter="url(#glow)">
+    <!-- H letter -->
+    <rect x="-80" y="-60" width="20" height="120" rx="4" fill="url(#logoGrad)"/>
+    <rect x="60" y="-60" width="20" height="120" rx="4" fill="url(#logoGrad)"/>
+    <rect x="-60" y="-10" width="120" height="20" rx="4" fill="url(#logoGrad)"/>
+    
+    <!-- Circuit dots on H -->
+    <circle cx="-70" cy="-50" r="4" fill="#00d4ff"/>
+    <circle cx="70" cy="-50" r="4" fill="#7b2ff7"/>
+    <circle cx="0" cy="0" r="5" fill="#ff6b35"/>
+    <circle cx="-70" cy="50" r="4" fill="#7b2ff7"/>
+    <circle cx="70" cy="50" r="4" fill="#00d4ff"/>
+  </g>
+  
+  <!-- HOTC text -->
+  <g transform="translate(400, 380)" filter="url(#softGlow)">
+    <text x="0" y="0" text-anchor="middle" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="url(#textGrad)" letter-spacing="16">
+      HOTC
+    </text>
+  </g>
+  
+  <!-- Subtitle -->
+  <g transform="translate(400, 430)">
+    <text x="0" y="0" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#8892b0" letter-spacing="8">
+      IL2CPP INTERPRETER
+    </text>
+  </g>
+  
+  <!-- Version badge -->
+  <g transform="translate(400, 470)">
+    <rect x="-40" y="-12" width="80" height="24" rx="12" fill="none" stroke="#00d4ff" stroke-width="1.5" opacity="0.6"/>
+    <text x="0" y="4" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#00d4ff" letter-spacing="2">
+      v1.0.0
+    </text>
+  </g>
+  
+  <!-- Decorative elements -->
+  <g stroke="#00d4ff" stroke-width="1" opacity="0.2">
+    <circle cx="400" cy="300" r="180" fill="none"/>
+    <circle cx="400" cy="300" r="220" fill="none"/>
+    <circle cx="400" cy="300" r="260" fill="none"/>
+  </g>
+  
+  <!-- Corner brackets -->
+  <g stroke="url(#logoGrad)" stroke-width="2" fill="none" opacity="0.4">
+    <path d="M50,50 L50,80 M50,50 L80,50"/>
+    <path d="M750,50 L750,80 M750,50 L720,50"/>
+    <path d="M50,550 L50,520 M50,550 L80,550"/>
+    <path d="M750,550 L750,520 M750,550 L720,550"/>
+  </g>
+</svg>

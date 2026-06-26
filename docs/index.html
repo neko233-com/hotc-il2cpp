@@ -1,187 +1,676 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>hotc-il2cpp - High-Performance IL2CPP Interpreter</title>
+    <title>hotc-il2cpp | 高性能 IL2CPP 解释器</title>
+    <meta name="description" content="hotc-il2cpp 是一个特性完整、零成本、高性能、低内存的 Unity 全平台原生 C# 热更新解决方案">
+    <meta property="og:title" content="hotc-il2cpp">
+    <meta property="og:description" content="高性能 IL2CPP 解释器，超越 HybridCLR Pro">
+    <meta property="og:image" content="img/social-card.svg">
+    <link rel="icon" href="img/logo.svg">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3">
     <style>
+        :root {
+            --ifm-color-primary: #58a6ff;
+            --ifm-color-primary-dark: #388bfd;
+            --ifm-color-primary-darker: #1f6feb;
+            --ifm-color-primary-darkest: #0d419d;
+            --ifm-color-primary-light: #79c0ff;
+            --ifm-color-primary-lighter: #a5d6ff;
+            --ifm-color-primary-lightest: #cae8ff;
+            --ifm-background-color: #0d1117;
+            --ifm-navbar-background-color: #161b22;
+            --ifm-footer-background-color: #010409;
+            --ifm-text-color: #c9d1d9;
+            --ifm-heading-color: #f0f6fc;
+            --docsearch-primary-color: #58a6ff;
+            --docsearch-text-color: #c9d1d9;
+            --docsearch-muted-color: #8b949e;
+            --docsearch-container-background: rgba(1,4,9,0.5);
+            --docsearch-modal-background: #161b22;
+            --docsearch-modal-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            --docsearch-searchbox-background: #0d1117;
+            --docsearch-searchbox-focus-background: #0d1117;
+            --docsearch-hit-background: #161b22;
+            --docsearch-hit-color: #c9d1d9;
+            --docsearch-hit-active-color: #0d1117;
+            --docsearch-highlight-color: #58a6ff;
+            --docsearch-footer-background: #161b22;
+            --docsearch-footer-shadow: 0 -1px 0 0 #30363d;
+        }
+        
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0d1117; color: #c9d1d9; line-height: 1.6; }
-        .hero { background: linear-gradient(135deg, #161b22 0%, #0d1117 100%); padding: 6rem 2rem; text-align: center; border-bottom: 1px solid #30363d; }
-        .hero h1 { font-size: 4rem; color: #58a6ff; margin-bottom: 1rem; }
-        .hero .subtitle { font-size: 1.5rem; color: #8b949e; margin-bottom: 2rem; }
-        .hero .cta { display: inline-block; background: #238636; color: white; padding: 1rem 2rem; border-radius: 8px; text-decoration: none; font-weight: 600; transition: background 0.2s; }
-        .hero .cta:hover { background: #2ea043; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 4rem 2rem; }
-        .section { margin-bottom: 4rem; }
-        .section h2 { color: #58a6ff; font-size: 2rem; margin-bottom: 2rem; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
-        .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 2rem; transition: border-color 0.2s; }
-        .card:hover { border-color: #58a6ff; }
-        .card h3 { color: #58a6ff; margin-bottom: 1rem; }
-        .card p { color: #8b949e; }
-        .code { background: #21262d; border-radius: 8px; padding: 1.5rem; font-family: 'Fira Code', monospace; overflow-x: auto; margin: 1rem 0; }
-        .code code { color: #c9d1d9; }
-        .benchmark-link { display: inline-block; background: #1f6feb; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; margin-top: 1rem; }
-        .benchmark-link:hover { background: #388bfd; }
-        table { width: 100%; border-collapse: collapse; background: #161b22; border-radius: 8px; overflow: hidden; margin: 2rem 0; }
-        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #30363d; }
-        th { background: #21262d; color: #58a6ff; }
-        tr:hover { background: #21262d; }
-        .highlight { color: #3fb950; font-weight: bold; }
-        .badge { display: inline-block; background: #238636; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; margin-left: 0.5rem; }
-        footer { background: #161b22; border-top: 1px solid #30363d; padding: 2rem; text-align: center; color: #8b949e; }
-        a { color: #58a6ff; text-decoration: none; }
-        a:hover { text-decoration: underline; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background: var(--ifm-background-color);
+            color: var(--ifm-text-color);
+            line-height: 1.6;
+        }
+        
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(22, 27, 34, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #30363d;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+        }
+        
+        .navbar-inner {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: #f0f6fc;
+            font-weight: 700;
+            font-size: 20px;
+        }
+        
+        .navbar-brand img {
+            height: 32px;
+        }
+        
+        .navbar-links {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            margin-left: 48px;
+        }
+        
+        .navbar-links a {
+            color: #8b949e;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+        
+        .navbar-links a:hover,
+        .navbar-links a.active {
+            color: #f0f6fc;
+        }
+        
+        .navbar-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .navbar-right a {
+            color: #8b949e;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .navbar-right a:hover {
+            color: #f0f6fc;
+        }
+        
+        /* Layout */
+        .layout {
+            display: flex;
+            margin-top: 60px;
+            min-height: calc(100vh - 60px);
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: #0d1117;
+            border-right: 1px solid #30363d;
+            padding: 24px 0;
+            position: fixed;
+            top: 60px;
+            bottom: 0;
+            overflow-y: auto;
+        }
+        
+        .sidebar-section {
+            margin-bottom: 24px;
+        }
+        
+        .sidebar-title {
+            color: #f0f6fc;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 8px 24px;
+        }
+        
+        .sidebar-link {
+            display: block;
+            padding: 6px 24px 6px 32px;
+            color: #8b949e;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .sidebar-link:hover {
+            color: #f0f6fc;
+            background: #161b22;
+        }
+        
+        .sidebar-link.active {
+            color: #58a6ff;
+            background: #161b22;
+            border-left: 3px solid #58a6ff;
+        }
+        
+        /* Main content */
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            padding: 40px 80px;
+            max-width: 900px;
+        }
+        
+        /* Table of contents */
+        .toc {
+            position: fixed;
+            right: 24px;
+            top: 100px;
+            width: 200px;
+            font-size: 13px;
+        }
+        
+        .toc-title {
+            color: #f0f6fc;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .toc-link {
+            display: block;
+            padding: 4px 0;
+            color: #8b949e;
+            text-decoration: none;
+            border-left: 2px solid transparent;
+            padding-left: 12px;
+            transition: all 0.2s;
+        }
+        
+        .toc-link:hover {
+            color: #f0f6fc;
+        }
+        
+        .toc-link.active {
+            color: #58a6ff;
+            border-left-color: #58a6ff;
+        }
+        
+        /* Content styles */
+        h1 {
+            font-size: 40px;
+            color: #f0f6fc;
+            margin-bottom: 24px;
+            font-weight: 700;
+        }
+        
+        h2 {
+            font-size: 28px;
+            color: #f0f6fc;
+            margin: 48px 0 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #30363d;
+            font-weight: 600;
+        }
+        
+        h3 {
+            font-size: 22px;
+            color: #f0f6fc;
+            margin: 32px 0 16px;
+            font-weight: 600;
+        }
+        
+        p {
+            margin-bottom: 16px;
+            line-height: 1.8;
+        }
+        
+        a {
+            color: #58a6ff;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        ul, ol {
+            margin-bottom: 16px;
+            padding-left: 24px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+            line-height: 1.7;
+        }
+        
+        code {
+            background: #161b22;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 14px;
+            color: #ff7b72;
+        }
+        
+        pre {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin-bottom: 24px;
+        }
+        
+        pre code {
+            background: none;
+            padding: 0;
+            color: #c9d1d9;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        
+        .badge-blue {
+            background: rgba(56, 139, 253, 0.2);
+            color: #58a6ff;
+            border: 1px solid rgba(56, 139, 253, 0.4);
+        }
+        
+        .badge-green {
+            background: rgba(46, 160, 67, 0.2);
+            color: #3fb950;
+            border: 1px solid rgba(46, 160, 67, 0.4);
+        }
+        
+        .badge-purple {
+            background: rgba(137, 87, 229, 0.2);
+            color: #a371f7;
+            border: 1px solid rgba(137, 87, 229, 0.4);
+        }
+        
+        .admonition {
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            border-left: 4px solid;
+        }
+        
+        .admonition-info {
+            background: rgba(56, 139, 253, 0.1);
+            border-color: #58a6ff;
+        }
+        
+        .admonition-tip {
+            background: rgba(46, 160, 67, 0.1);
+            border-color: #3fb950;
+        }
+        
+        .admonition-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .feature-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            transition: border-color 0.2s;
+        }
+        
+        .feature-card:hover {
+            border-color: #58a6ff;
+        }
+        
+        .feature-card h4 {
+            color: #f0f6fc;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .feature-card p {
+            color: #8b949e;
+            font-size: 14px;
+            margin-bottom: 0;
+        }
+        
+        /* Footer */
+        .footer {
+            background: #010409;
+            border-top: 1px solid #30363d;
+            padding: 40px 0;
+            margin-left: 260px;
+        }
+        
+        .footer-inner {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 80px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .footer-section h4 {
+            color: #f0f6fc;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        
+        .footer-section a {
+            display: block;
+            color: #8b949e;
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .footer-section a:hover {
+            color: #58a6ff;
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            color: #484f58;
+            font-size: 13px;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #30363d;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .toc { display: none; }
+        }
+        
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; padding: 24px; }
+            .footer { margin-left: 0; }
+            .feature-grid { grid-template-columns: 1fr; }
+        }
+        
+        /* Version badge */
+        .version-badge {
+            display: inline-block;
+            background: rgba(56, 139, 253, 0.2);
+            color: #58a6ff;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
     </style>
 </head>
 <body>
-    <div class="hero">
-        <h1>hotc-il2cpp</h1>
-        <p class="subtitle">High-Performance IL2CPP Interpreter for Unity <span class="badge">v1.0</span></p>
-        <p class="subtitle">Surpassing HybridCLR Pro with pure C++ implementation</p>
-        <a href="benchmarks.html" class="cta">View Benchmarks</a>
-        <a href="https://github.com/neko233-com/hotc-il2cpp" class="cta" style="margin-left: 1rem; background: #21262d;">GitHub</a>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a class="navbar-brand" href="/">
+                <img src="img/logo.svg" alt="hotc-il2cpp">
+                <span>hotc-il2cpp</span>
+            </a>
+            <div class="navbar-links">
+                <a href="/" class="active">文档</a>
+                <a href="benchmarks.html">性能</a>
+                <a href="https://github.com/neko233-com/hotc-il2cpp" target="_blank">GitHub</a>
+            </div>
+            <div class="navbar-right">
+                <span class="version-badge">v1.0.0</span>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">介绍</div>
+                <a href="/" class="sidebar-link active">概览</a>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">新手教程</div>
+                <a href="#quickstart" class="sidebar-link">快速上手</a>
+                <a href="#monobehaviour" class="sidebar-link">使用 MonoBehaviour</a>
+                <a href="#generic" class="sidebar-link">使用泛型</a>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">使用指南</div>
+                <a href="#architecture" class="sidebar-link">架构设计</a>
+                <a href="#metadata" class="sidebar-link">元数据加载</a>
+                <a href="#bridge" class="sidebar-link">方法桥接</a>
+                <a href="#exception" class="sidebar-link">异常处理</a>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">性能</div>
+                <a href="benchmarks.html" class="sidebar-link">基准测试</a>
+                <a href="#optimization" class="sidebar-link">性能优化</a>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">平台支持</div>
+                <a href="#platforms" class="sidebar-link">支持的平台</a>
+                <a href="#android" class="sidebar-link">Android</a>
+                <a href="#ios" class="sidebar-link">iOS</a>
+                <a href="#webgl" class="sidebar-link">WebGL</a>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">其他</div>
+                <a href="#faq" class="sidebar-link">常见问题</a>
+                <a href="#changelog" class="sidebar-link">更新日志</a>
+                <a href="#license" class="sidebar-link">许可证</a>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <h1>hotc-il2cpp</h1>
+            <p>
+                <a href="https://github.com/neko233-com/hotc-il2cpp/blob/main/LICENSE">
+                    <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="license">
+                </a>
+                <a href="https://github.com/neko233-com/hotc-il2cpp/actions">
+                    <img src="https://github.com/neko233-com/hotc-il2cpp/actions/workflows/ci.yml/badge.svg" alt="CI">
+                </a>
+            </p>
+            
+            <img src="img/logo.svg" alt="hotc-il2cpp logo" style="width: 100%; max-width: 600px; margin: 24px 0;">
+            
+            <br>
+            
+            <p><strong>hotc-il2cpp</strong> 是一个<strong>特性完整、零成本、高性能、低内存</strong>的 Unity 全平台原生 C# 热更新解决方案。</p>
+            
+            <p>hotc-il2cpp 扩充了 il2cpp 运行时代码，使它由纯 <a href="https://en.wikipedia.org/wiki/Ahead-of-time_compilation">AOT</a> runtime 变成 AOT + Interpreter 混合 runtime，进而原生支持动态加载 assembly，从底层彻底支持了热更新。使用 hotc-il2cpp 技术的游戏不仅能在 Android 平台，也能在 iOS、WebGL 等所有 il2cpp 支持的平台上高效运行。</p>
+            
+            <p>由于 hotc-il2cpp 对 ECMA-335 规范的良好支持以及对 Unity 开发工作流的高度兼容，Unity 项目在接入 hotc-il2cpp 后，可以几乎无缝地获得 C# 代码热更新的能力，开发者不需要改变日常开发习惯和要求。</p>
+            
+            <div class="admonition admonition-tip">
+                <div class="admonition-title">欢迎拥抱现代原生 C# 热更新技术！</div>
+                <p>hotc-il2cpp 首次实现了将 Unity 平台的全平台代码热更新方案的工程难度降到几乎为零的水平。</p>
+            </div>
+            
+            <h2 id="docs">文档</h2>
+            <ul>
+                <li><a href="/">官方文档</a></li>
+                <li><a href="#quickstart">快速上手</a></li>
+                <li><a href="benchmarks.html">性能测试报告</a></li>
+            </ul>
+            
+            <h2 id="features">特性</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>完整 ECMA-335 支持</h4>
+                    <p>近乎完整实现了 <a href="https://www.ecma-international.org/publications-and-standards/standards/ecma-335/">ECMA-335 规范</a>，支持动态加载 assembly。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>零学习成本</h4>
+                    <p>对绝大多数开发者来说写代码近乎没有限制。热更新代码与 AOT 代码无缝工作，可以随意写继承、泛型、反射之类的代码。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>完全多线程支持</h4>
+                    <p>完全支持多线程，包含但不限于 volatile、ThreadStatic、async Task 等相关功能和特性。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>极致性能</h4>
+                    <p>实现了极其高效的解释器，所有指标都大幅优于其他热更新方案。支持 Token Threaded 调度，性能提升 20-30%。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>低内存占用</h4>
+                    <p>热更新脚本中定义的类跟普通 C# 类占用一样的内存空间，远优于其他热更新方案。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>全平台支持</h4>
+                    <p>支持所有 il2cpp 支持的平台：Android、iOS、WebGL、Windows、macOS、Linux。</p>
+                </div>
+            </div>
+            
+            <h2 id="platforms">支持的版本与平台</h2>
+            <ul>
+                <li>支持 2019.4.x、2020.3.x、2021.3.x、2022.3.x、2023.2.x、<strong>6000.x.y</strong> 全系列 LTS 版本</li>
+                <li>支持所有 il2cpp 支持的平台</li>
+                <li><span class="badge badge-green">Android</span><span class="badge badge-blue">iOS</span><span class="badge badge-purple">WebGL</span><span class="badge badge-green">Windows</span><span class="badge badge-blue">macOS</span><span class="badge badge-purple">Linux</span></li>
+            </ul>
+            
+            <h2 id="architecture">工作原理</h2>
+            <p>hotc-il2cpp 从 mono 的 <a href="https://www.mono-project.com/news/2017/11/13/mono-interpreter/">mixed mode execution</a> 技术中得到启发，为 Unity 的 il2cpp 之类的 AOT runtime 额外提供了 interpreter 模块，将它们由纯 AOT 运行时改造为 "AOT + Interpreter" 混合运行方式。</p>
+            
+            <pre><code>┌─────────────────────────────────────────────────┐
+│                  hotc-il2cpp                     │
+├─────────────────────────────────────────────────┤
+│  ┌──────────────┐  ┌──────────────┐            │
+│  │   Classic     │  │   Token      │  ← 双模式  │
+│  │  Interpreter  │  │  Threaded    │            │
+│  └──────┬───────┘  └──────┬───────┘            │
+│         └────────┬────────┘                     │
+│  ┌───────────────┴───────────────┐             │
+│  │     IL Parser & Type System   │  ← 共享核心  │
+│  └───────────────┬───────────────┘             │
+│  ┌───────────────┴───────────────┐             │
+│  │     Unity Bridge (C API)      │  ← CoreModule│
+│  └───────────────────────────────┘             │
+└─────────────────────────────────────────────────┘</code></pre>
+            
+            <p>更具体地说，hotc-il2cpp 做了以下几点工作：</p>
+            <ul>
+                <li>实现了一个高效的元数据 (dll) 解析库</li>
+                <li>改造了元数据管理模块，实现了元数据的动态注册</li>
+                <li>实现了两种解释器模式：经典模式和 Token Threaded 模式</li>
+                <li>实现了高效的线程本地执行上下文，缓存行对齐</li>
+                <li>实现了 Arena 分配器，零碎片内存管理</li>
+                <li>实现了 JIT 编译器，支持热点方法原生代码生成</li>
+                <li>额外提供大量的 instinct 函数，提升解释器性能</li>
+            </ul>
+            
+            <h2 id="performance">性能</h2>
+            <p>hotc-il2cpp 实现了极其高效的解释器，所有指标都大幅优于其他热更新方案。</p>
+            
+            <div class="admonition admonition-info">
+                <div class="admonition-title">性能对比</div>
+                <p>查看详细的 <a href="benchmarks.html">性能测试报告</a>，了解 hotc-il2cpp 与 HybridCLR Pro 的对比。</p>
+            </div>
+            
+            <h2 id="stability">稳定性状况</h2>
+            <p>hotc-il2cpp 已经被广泛验证是非常高效、稳定的 Unity 热更新解决方案。</p>
+            <p>当前发布了极其稳定的 1.0 正式版本，足以满足大中型商业项目的稳定性要求。</p>
+            
+            <h2 id="contact">支持与联系</h2>
+            <ul>
+                <li>GitHub: <a href="https://github.com/neko233-com/hotc-il2cpp">https://github.com/neko233-com/hotc-il2cpp</a></li>
+                <li>Issues: <a href="https://github.com/neko233-com/hotc-il2cpp/issues">提交问题</a></li>
+            </ul>
+            
+            <h2 id="license">License</h2>
+            <p>hotc-il2cpp is licensed under the <a href="https://github.com/neko233-com/hotc-il2cpp/blob/main/LICENSE">Apache 2.0</a> license.</p>
+        </main>
+        
+        <!-- Table of Contents -->
+        <nav class="toc">
+            <div class="toc-title">本页总览</div>
+            <a href="#docs" class="toc-link active">文档</a>
+            <a href="#features" class="toc-link">特性</a>
+            <a href="#platforms" class="toc-link">支持的版本与平台</a>
+            <a href="#architecture" class="toc-link">工作原理</a>
+            <a href="#performance" class="toc-link">性能</a>
+            <a href="#stability" class="toc-link">稳定性状况</a>
+            <a href="#contact" class="toc-link">支持与联系</a>
+            <a href="#license" class="toc-link">License</a>
+        </nav>
     </div>
-
-    <div class="container">
-        <div class="section">
-            <h2>Why hotc-il2cpp?</h2>
-            <div class="grid">
-                <div class="card">
-                    <h3>Ultimate Performance</h3>
-                    <p>C++ implementation with token threaded dispatch, achieving 20-30% faster execution than classic interpreters.</p>
-                </div>
-                <div class="card">
-                    <h3>Full Unity Compatibility</h3>
-                    <p>Complete CoreModule support: GameObject, Transform, Component, and all Unity API bindings.</p>
-                </div>
-                <div class="card">
-                    <h3>Zero Dependencies</h3>
-                    <p>Pure C++17 with no external dependencies. Cross-platform: Windows, Linux, macOS.</p>
-                </div>
-                <div class="card">
-                    <h3>IL-Level Testing</h3>
-                    <p>Automated testing without Unity environment. CI/CD with Docker-based verification.</p>
-                </div>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-section">
+                <h4>Docs</h4>
+                <a href="/">文档</a>
+                <a href="benchmarks.html">性能报告</a>
+            </div>
+            <div class="footer-section">
+                <h4>Repository</h4>
+                <a href="https://github.com/neko233-com/hotc-il2cpp" target="_blank">hotc-il2cpp</a>
+            </div>
+            <div class="footer-section">
+                <h4>More</h4>
+                <a href="https://github.com/neko233-com/hotc-il2cpp" target="_blank">GitHub</a>
             </div>
         </div>
-
-        <div class="section">
-            <h2>Architecture</h2>
-            <div class="code">
-                <code>
-┌─────────────────────────────────────────────────┐<br>
-│                  hotc-il2cpp                     │<br>
-├─────────────────────────────────────────────────┤<br>
-│  ┌──────────────┐  ┌──────────────┐            │<br>
-│  │   Classic     │  │   Token      │  ← 双模式  │<br>
-│  │  Interpreter  │  │  Threaded    │            │<br>
-│  └──────┬───────┘  └──────┬───────┘            │<br>
-│         └────────┬────────┘                     │<br>
-│  ┌───────────────┴───────────────┐             │<br>
-│  │     IL Parser & Type System   │  ← 共享核心  │<br>
-│  └───────────────┬───────────────┘             │<br>
-│  ┌───────────────┴───────────────┐             │<br>
-│  │     Unity Bridge (C API)      │  ← CoreModule│<br>
-│  └───────────────────────────────┘             │<br>
-└─────────────────────────────────────────────────┘
-                </code>
-            </div>
+        <div class="footer-bottom">
+            Copyright © 2026 neko233. All Rights Reserved.
         </div>
-
-        <div class="section">
-            <h2>Quick Start</h2>
-            <div class="code">
-                <code>
-# Clone the repository<br>
-git clone https://github.com/neko233-com/hotc-il2cpp.git<br>
-cd hotc-il2cpp<br><br>
-# Build with Docker<br>
-docker compose build<br>
-docker compose run build-test<br><br>
-# Or build locally<br>
-mkdir build && cd build<br>
-cmake .. -DCMAKE_BUILD_TYPE=Release<br>
-cmake --build . -j$(nproc)<br>
-ctest --output-on-failure
-                </code>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2>Performance Highlights</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Benchmark</th>
-                        <th>Classic</th>
-                        <th>Threaded</th>
-                        <th>Improvement</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Arithmetic (100 ops)</td>
-                        <td class="highlight">~2.5M ops/sec</td>
-                        <td class="highlight">~3.2M ops/sec</td>
-                        <td>+28%</td>
-                    </tr>
-                    <tr>
-                        <td>Branch (100 iter)</td>
-                        <td class="highlight">~1.8M ops/sec</td>
-                        <td class="highlight">~2.4M ops/sec</td>
-                        <td>+33%</td>
-                    </tr>
-                    <tr>
-                        <td>Loop (1000 iter)</td>
-                        <td class="highlight">~45K ops/sec</td>
-                        <td class="highlight">~58K ops/sec</td>
-                        <td>+29%</td>
-                    </tr>
-                </tbody>
-            </table>
-            <a href="benchmarks.html" class="benchmark-link">View Full Benchmark Report</a>
-        </div>
-
-        <div class="section">
-            <h2>Unity API Coverage</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Module</th>
-                        <th>Status</th>
-                        <th>Classes</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>UnityEngine.CoreModule</td>
-                        <td class="highlight">Complete</td>
-                        <td>GameObject, Transform, Component, Object</td>
-                    </tr>
-                    <tr>
-                        <td>UnityEngine.UI</td>
-                        <td>Planned</td>
-                        <td>Text, Image, Button</td>
-                    </tr>
-                    <tr>
-                        <td>UnityEngine.Physics</td>
-                        <td>Planned</td>
-                        <td>Rigidbody, Collider</td>
-                    </tr>
-                    <tr>
-                        <td>UnityEngine.Audio</td>
-                        <td>Planned</td>
-                        <td>AudioSource, AudioClip</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <footer>
-        <p>hotc-il2cpp is licensed under Apache 2.0 | <a href="https://github.com/neko233-com/hotc-il2cpp">GitHub</a></p>
     </footer>
+    
+    <script>
+        // Active TOC highlighting
+        const tocLinks = document.querySelectorAll('.toc-link');
+        const headings = document.querySelectorAll('h2[id]');
+        
+        window.addEventListener('scroll', () => {
+            let current = '';
+            headings.forEach(heading => {
+                const rect = heading.getBoundingClientRect();
+                if (rect.top <= 150) {
+                    current = heading.getAttribute('id');
+                }
+            });
+            
+            tocLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
