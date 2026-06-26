@@ -106,12 +106,8 @@ public:
 };
 
 // SIMD-optimized value operations
-#if defined(HOTC_HAS_SSE2)
-#include <emmintrin.h>
-#endif
-#if defined(HOTC_HAS_NEON)
-#include <arm_neon.h>
-#endif
+// SIMD headers must be included in .cpp files, not headers
+// to avoid breaking stdlib include order
 
 struct alignas(16) SIMDValue {
     union {
